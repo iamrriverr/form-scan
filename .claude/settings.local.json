@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync:*)",
+      "Bash(uv pip:*)",
+      "Bash(uv run:*)",
+      "Read(//c/Users/River/.claude/projects/c--Users-River-Codes-test-form-scan/58eaefb0-7967-43ea-b129-16833b0944d5/tool-results/**)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+=== applicant_address (label y=460-520) ===
+  county        x1=  420  x2=  464  yc=494
+  district      x1=  692  x2=  734  yc=494
+  road          x1= 1079  x2= 1121  yc=494
+  section       x1= 1258  x2= 1379  yc=448
+  number        x1= 1263  x2= 1368  yc=532
+  floor         x1= 1368  x2= 1473  yc=532
+  lane          x1= 1379  x2= 1501  yc=448
+=== applicant_contact_address (label y=629-680) ===
+  county        x1=  423  x2=  466  yc=698
+  road          x1= 1081  x2= 1149  yc=696
+  section       x1= 1262  x2= 1346  yc=622
+  number        x1= 1355  x2= 1423  yc=696
+  lane          x1= 1384  x2= 1468  yc=624
+  floor         x1= 1423  x2= 1492  yc=696
+  alley         x1= 1536  x2= 1604  yc=624

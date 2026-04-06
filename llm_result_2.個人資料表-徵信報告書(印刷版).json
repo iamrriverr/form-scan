@@ -1,0 +1,128 @@
+[
+  {
+    "label_text": "姓名",
+    "field_key": "applicant_name",
+    "label_bbox": {
+      "x1": 180,
+      "y1": 320,
+      "x2": 240,
+      "y2": 360
+    },
+    "fill_bbox": {
+      "x1": 260,
+      "y1": 320,
+      "x2": 600,
+      "y2": 360
+    },
+    "page": 1,
+    "confidence": 0
+  },
+  {
+    "label_text": "身分證統一編號",
+    "field_key": "applicant_id_number",
+    "label_bbox": {
+      "x1": 1200,
+      "y1": 320,
+      "x2": 1350,
+      "y2": 360
+    },
+    "fill_bbox": {
+      "x1": 1360,
+      "y1": 320,
+      "x2": 1850,
+      "y2": 360
+    },
+    "page": 1,
+    "confidence": 0
+  },
+  {
+    "label_text": "出生日期",
+    "field_key": "applicant_birth_date",
+    "label_bbox": {
+      "x1": 700,
+      "y1": 320,
+      "x2": 820,
+      "y2": 360
+    },
+    "fill_bbox": {
+      "x1": 830,
+      "y1": 320,
+      "x2": 1000,
+      "y2": 360
+    },
+    "page": 1,
+    "confidence": 0
+  },
+  {
+    "label_text": "戶籍地址",
+    "field_key": "applicant_address",
+    "label_bbox": {
+      "x1": 180,
+      "y1": 370,
+      "x2": 270,
+      "y2": 410
+    },
+    "fill_bbox": {
+      "x1": 280,
+      "y1": 370,
+      "x2": 1200,
+      "y2": 410
+    },
+    "page": 1,
+    "confidence": 0
+  },
+  {
+    "label_text": "通訊處",
+    "field_key": "applicant_contact_address",
+    "label_bbox": {
+      "x1": 180,
+      "y1": 420,
+      "x2": 270,
+      "y2": 460
+    },
+    "fill_bbox": {
+      "x1": 280,
+      "y1": 420,
+      "x2": 1200,
+      "y2": 460
+    },
+    "page": 1,
+    "confidence": 0
+  },
+  {
+    "label_text": "電話",
+    "field_key": "applicant_phone",
+    "label_bbox": {
+      "x1": 1200,
+      "y1": 370,
+      "x2": 1300,
+      "y2": 410
+    },
+    "fill_bbox": {
+      "x1": 1310,
+      "y1": 370,
+      "x2": 1600,
+      "y2": 410
+    },
+    "page": 1,
+    "confidence": 0
+  },
+  {
+    "label_text": "手機",
+    "field_key": "other",
+    "label_bbox": {
+      "x1": 1800,
+      "y1": 370,
+      "x2": 1900,
+      "y2": 410
+    },
+    "fill_bbox": {
+      "x1": 1910,
+      "y1": 370,
+      "x2": 2200,
+      "y2": 410
+    },
+    "page": 1,
+    "confidence": 0
+  }
+]

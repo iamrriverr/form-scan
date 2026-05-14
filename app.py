@@ -10,8 +10,8 @@ from io import BytesIO
 from pdf_to_image import pdf_to_images
 from ocr_engine import run_ocr
 from rule_engine import process_form
-from llm_filter import filter_fields_with_llm
 from fill_pdf import fill_pdf, FIELD_LABELS, ADDRESS_FIELD_KEYS, ADDRESS_SUB_LABELS
+from ocr_box_editor_component import ocr_box_editor, pil_image_to_data_url
 
 PDF_DIR = os.path.join(os.path.dirname(__file__), "pdfs")
 
@@ -21,7 +21,7 @@ def get_pdf_list():
 
 
 def detect_fields(pdf_path: str) -> tuple[list, list]:
-    """執行 OCR + 規則引擎 + LLM 過濾，回傳 (欄位清單, OCR原始結果)"""
+    """執行 OCR + 規則引擎，回傳 (欄位清單, OCR原始結果)。"""
     images = pdf_to_images(pdf_path, dpi=300)
     all_blocks = []
     all_fields = []
@@ -34,9 +34,7 @@ def detect_fields(pdf_path: str) -> tuple[list, list]:
             all_blocks, img_info["width"], img_info["page"], img_info["height"]
         )
         if fields:
-            form_name = os.path.basename(pdf_path).replace(".pdf", "")
-            filtered = filter_fields_with_llm(fields, form_name)
-            all_fields.extend(filtered)
+            all_fields.extend(fields)
 
     return all_fields, all_blocks
 
@@ -60,6 +58,16 @@ def save_cached(pdf_path: str, fields: list, ocr_blocks: list):
         json.dump(fields, f, ensure_ascii=False, indent=2)
     with open(ocr_path, "w", encoding="utf-8") as f:
         json.dump(ocr_blocks, f, ensure_ascii=False, indent=2)
+
+
+def get_page_image_data_urls(pdf_path: str) -> dict[int, str]:
+    images = pdf_to_images(pdf_path, dpi=300)
+    return {img["page"]: pil_image_to_data_url(img["image"]) for img in images}
+
+
+def replace_page_fields(all_fields: list, page: int, new_page_fields: list) -> list:
+    other_pages = [f for f in all_fields if f.get("page") != page]
+    return other_pages + new_page_fields
 
 
 def get_union_field_keys(all_pdf_data: dict) -> list:
@@ -90,7 +98,7 @@ def get_union_field_keys(all_pdf_data: dict) -> list:
 
 # --- Streamlit UI ---
 
-st.set_page_config(page_title="農會表單自動填寫", layout="centered")
+st.set_page_config(page_title="農會表單自動填寫", layout="wide")
 st.title("農會表單自動填寫")
 
 # 選擇 PDF（多選）
@@ -105,11 +113,19 @@ if not selected_pdfs:
     st.info("請選擇至少一份表單")
     st.stop()
 
+force_redetect = st.checkbox("重新跑 OCR + rule engine（忽略快取）", value=False)
+
 # 偵測欄位
 if "pdf_data" not in st.session_state:
     st.session_state.pdf_data = {}  # {pdf_name: {"fields": [...], "ocr_blocks": [...]}}
 
-if st.button("偵測欄位") or st.session_state.pdf_data:
+detect_clicked = st.button("偵測欄位")
+
+if detect_clicked or st.session_state.pdf_data:
+    if detect_clicked and force_redetect:
+        for pdf_name in selected_pdfs:
+            st.session_state.pdf_data.pop(pdf_name, None)
+
     need_detect = [p for p in selected_pdfs if p not in st.session_state.pdf_data]
 
     if need_detect:
@@ -118,7 +134,7 @@ if st.button("偵測欄位") or st.session_state.pdf_data:
             pdf_path = os.path.join(PDF_DIR, pdf_name)
             progress.progress((i) / len(need_detect), text=f"分析：{pdf_name}")
 
-            cached = load_cached(pdf_path)
+            cached = None if force_redetect else load_cached(pdf_path)
             if cached:
                 fields, ocr_blocks = cached
             else:
@@ -137,6 +153,34 @@ if st.button("偵測欄位") or st.session_state.pdf_data:
     for pdf_name, data in selected_data.items():
         keys = [f["field_key"] for f in data["fields"]]
         st.caption(f"**{pdf_name}**：{', '.join(FIELD_LABELS.get(k, k) for k in dict.fromkeys(keys))}")
+
+    st.subheader("人工確認欄位框")
+    st.caption("OCR + rule engine 的結果會先進到拖拉介面。調整填寫框後按「套用修改」，下面的填寫流程會使用修改後座標。")
+
+    for pdf_name, data in selected_data.items():
+        pdf_path = os.path.join(PDF_DIR, pdf_name)
+        page_numbers = sorted({f.get("page", 1) for f in data["fields"]})
+        if not page_numbers:
+            continue
+
+        with st.expander(pdf_name, expanded=len(selected_data) == 1):
+            image_data_urls = get_page_image_data_urls(pdf_path)
+            tabs = st.tabs([f"第 {page} 頁" for page in page_numbers])
+
+            for tab, page in zip(tabs, page_numbers):
+                with tab:
+                    page_fields = [f for f in data["fields"] if f.get("page", 1) == page]
+                    edited = ocr_box_editor(
+                        image_data_urls.get(page, ""),
+                        page_fields,
+                        key=f"ocr_editor_{pdf_name}_{page}",
+                    )
+                    if edited and edited.get("fields") is not None:
+                        updated_fields = replace_page_fields(data["fields"], page, edited["fields"])
+                        updated_fields.sort(key=lambda f: (f.get("page", 1), f.get("label_bbox", {}).get("y1", 0)))
+                        st.session_state.pdf_data[pdf_name]["fields"] = updated_fields
+                        save_cached(pdf_path, updated_fields, data["ocr_blocks"])
+                        st.success("已套用欄位框修改")
 
     # 取聯集欄位
     union_fields = get_union_field_keys(selected_data)

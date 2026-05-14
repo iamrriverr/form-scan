@@ -8,7 +8,7 @@ def parse_address(address: str) -> dict:
     """
     解析台灣地址，拆成各個子欄位。
     例如: "新北市汐止區大同路一段100巷5弄10號3樓"
-    → {county: "新北", district: "汐止", road: "大同", section: "一", lane: "100", alley: "5", number: "10", floor: "3"}
+    → {county: "新北市", district: "汐止區", road: "大同路", section: "一", lane: "100", alley: "5", number: "10", floor: "3"}
     """
     result = {
         "county": "",     # 縣/市
@@ -26,19 +26,19 @@ def parse_address(address: str) -> dict:
     # 縣/市
     m = re.match(r"(.+?[縣市])", addr)
     if m:
-        result["county"] = m.group(1).rstrip("縣市")
+        result["county"] = m.group(1)
         addr = addr[m.end():]
 
     # 鄉/鎮/市/區
     m = re.match(r"(.+?[鄉鎮市區])", addr)
     if m:
-        result["district"] = m.group(1).rstrip("鄉鎮市區")
+        result["district"] = m.group(1)
         addr = addr[m.end():]
 
     # 路/街
     m = re.match(r"(.+?[路街])", addr)
     if m:
-        result["road"] = m.group(1).rstrip("路街")
+        result["road"] = m.group(1)
         addr = addr[m.end():]
 
     # 段

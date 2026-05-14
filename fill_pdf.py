@@ -136,7 +136,7 @@ def find_address_sublabels(ocr_blocks: list, address_field: dict,
 def fill_pdf(pdf_path: str, field_results: list, field_values: dict, output_path: str,
              ocr_blocks: list = None, ocr_dpi: int = 300):
     """
-    將欄位值寫入 PDF。
+    將欄位值寫入 PDF。填寫位置完全依照人工確認後的欄位框座標。
 
     field_values 格式：
       - 一般欄位: {"applicant_name": "王小明"}
@@ -150,15 +150,18 @@ def fill_pdf(pdf_path: str, field_results: list, field_values: dict, output_path
         page_num = field["page"] - 1
         page = doc[page_num]
 
-        if field_key in ADDRESS_FIELD_KEYS and ocr_blocks:
+        if field_key in ADDRESS_FIELD_KEYS:
             addr_parts = {}
             for sub_key in ADDRESS_SUB_LABELS:
                 val = field_values.get(f"{field_key}.{sub_key}", "")
                 if val:
                     addr_parts[sub_key] = val
             if addr_parts:
-                all_addr_fields = [f for f in field_results if f["field_key"] in ADDRESS_FIELD_KEYS]
-                _fill_address(page, field, addr_parts, ocr_blocks, scale, all_addr_fields)
+                if field.get("sub_bboxes"):
+                    _fill_address_subboxes(page, field, addr_parts, scale)
+                else:
+                    combined = "".join(addr_parts.values())
+                    _fill_simple(page, field, combined, scale)
         else:
             value = field_values.get(field_key, "")
             if value:
@@ -170,14 +173,17 @@ def fill_pdf(pdf_path: str, field_results: list, field_values: dict, output_path
 
 
 def _fill_simple(page, field: dict, value: str, scale: float):
-    """一般欄位：直接寫入 fill_bbox"""
-    bbox = field["fill_bbox"]
+    """一般欄位：直接寫入人工確認後的 fill_bbox。"""
+    _insert_text_in_bbox(page, value, field["fill_bbox"], scale)
+
+
+def _insert_text_in_bbox(page, value: str, bbox: dict, scale: float, max_font_size: int = 14):
     x1 = bbox["x1"] * scale
     y1 = bbox["y1"] * scale
     y2 = bbox["y2"] * scale
 
     box_height = y2 - y1
-    font_size = max(8, min(box_height * 0.6, 14))
+    font_size = max(8, min(box_height * 0.6, max_font_size))
     text_y = y1 + (box_height - font_size) / 2 + font_size
 
     page.insert_text(
@@ -187,6 +193,26 @@ def _fill_simple(page, field: dict, value: str, scale: float):
         fontname="china-s",
         color=(0, 0, 0.8),
     )
+
+
+def _fill_address_subboxes(page, field: dict, addr_parts: dict, scale: float):
+    """地址欄位：使用人工拖拉確認過的子框位置逐格填入。"""
+    sub_bboxes = field.get("sub_bboxes") or {}
+    missing_parts = []
+
+    for sub_key in ADDRESS_SUB_LABELS:
+        text = addr_parts.get(sub_key, "")
+        bbox = sub_bboxes.get(sub_key)
+        if not text:
+            continue
+        if not bbox:
+            missing_parts.append(text)
+            continue
+
+        _insert_text_in_bbox(page, text, bbox, scale, max_font_size=12)
+
+    if missing_parts:
+        _fill_simple(page, field, "".join(missing_parts), scale)
 
 
 def _fill_address(page, field: dict, addr_parts: dict, ocr_blocks: list, scale: float,
